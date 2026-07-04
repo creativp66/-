@@ -792,17 +792,7 @@ function palletSettings_() {
 /** Папка «Этикетки поставок <бренд>» рядом с таблицей разгруза (создаётся один раз).
  *  Расшарьте её складу — все PDF будут падать туда. */
 function labelsFolder_() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var name = 'Этикетки поставок ' + brand_();
-  var parent = null;
-  try {
-    var cur = DriveApp.getFileById(ss.getId());
-    var parents = cur.getParents();
-    if (parents.hasNext()) parent = parents.next();
-  } catch (e) {}
-  if (!parent) parent = DriveApp.getRootFolder();
-  var it = parent.getFoldersByName(name);
-  return it.hasNext() ? it.next() : parent.createFolder(name);
+  return DriveApp.getFolderById(TARGET_FOLDER_ID);
 }
 
 /** Имя PDF: «Кластер №заявки (слот дата)» — этикетки ВСЕХ грузомест заявки в одном файле. */
@@ -1596,11 +1586,7 @@ function labelPdfBlob_(body, creds) {
 
 /** Папка дня по артикулу: «Этикетки поставок <бренд>» / «ДД.ММ.ГГГГ — <артикул>». */
 function artDayFolder_(art) {
-  var root = labelsFolder_();
-  var day = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Europe/Moscow', 'dd.MM.yyyy');
-  var name = day + ' — ' + String(art).replace(/[\\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
-  var it = root.getFoldersByName(name);
-  return it.hasNext() ? it.next() : root.createFolder(name);
+  return labelsFolder_();
 }
 
 /** Этикетки заявки, разложенные ПО АРТИКУЛАМ: на каждый артикул — свой PDF в папке
