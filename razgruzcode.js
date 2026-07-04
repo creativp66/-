@@ -23,7 +23,7 @@
  */
 
 // BRAND задаётся в загрузчике таблицы или на листе «Ключи» (B1)
-
+var TARGET_FOLDER_ID = "1tFeJIfCQRgB29cF5HJSRiY-WZWWnIyj2";
 var HORIZON = 60;   // горизонт потребности, дней
 var PRI = 30;       // порог приоритета (для подсветки «Остаток дней»)
 
@@ -512,14 +512,10 @@ function buildSupplyTable() {
   sw.setFrozenRows(1);
 
   // положить файл рядом с текущей таблицей (в ту же папку Drive)
-  try {
-    var cur = DriveApp.getFileById(SpreadsheetApp.getActiveSpreadsheet().getId());
-    var parents = cur.getParents();
-    if (parents.hasNext()) {
-      var folder = parents.next();
-      DriveApp.getFileById(out.getId()).moveTo(folder);
-    }
-  } catch (e) {}
+  labelsFolder_().addFile(out);
+   function labelsFolder_() {
+  return DriveApp.getFolderById(TARGET_FOLDER_ID);
+}
 
   ui.alert('Таблица поставок готова', name + '\n\n' + out.getUrl(), ui.ButtonSet.OK);
 }
