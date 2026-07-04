@@ -23,7 +23,7 @@
  */
 
 // BRAND задаётся в загрузчике таблицы или на листе «Ключи» (B1)
-var TARGET_FOLDER_ID = "1tFeJIfCQRgB29cF5HJSRiY-WZWWnIyj2";
+
 var HORIZON = 60;   // горизонт потребности, дней
 var PRI = 30;       // порог приоритета (для подсветки «Остаток дней»)
 
@@ -512,10 +512,14 @@ function buildSupplyTable() {
   sw.setFrozenRows(1);
 
   // положить файл рядом с текущей таблицей (в ту же папку Drive)
-  labelsFolder_().addFile(out);
-   function labelsFolder_() {
-  return DriveApp.getFolderById(TARGET_FOLDER_ID);
-}
+  try {
+    var cur = DriveApp.getFileById(SpreadsheetApp.getActiveSpreadsheet().getId());
+    var parents = cur.getParents();
+    if (parents.hasNext()) {
+      var folder = parents.next();
+      DriveApp.getFileById(out.getId()).moveTo(folder);
+    }
+  } catch (e) {}
 
   ui.alert('Таблица поставок готова', name + '\n\n' + out.getUrl(), ui.ButtonSet.OK);
 }
@@ -792,7 +796,17 @@ function palletSettings_() {
 /** Папка «Этикетки поставок <бренд>» рядом с таблицей разгруза (создаётся один раз).
  *  Расшарьте её складу — все PDF будут падать туда. */
 function labelsFolder_() {
-  return DriveApp.getFolderById(TARGET_FOLDER_ID);
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var name = 'Этикетки поставок ' + brand_();
+  var parent = null;
+  try {
+    var cur = DriveApp.getFileById(ss.getId());
+    var parents = cur.getParents();
+    if (parents.hasNext()) parent = parents.next();
+  } catch (e) {}
+  if (!parent) parent = DriveApp.getRootFolder();
+  var it = parent.getFoldersByName(name);
+  return it.hasNext() ? it.next() : parent.createFolder(name);
 }
 
 /** Имя PDF: «Кластер №заявки (слот дата)» — этикетки ВСЕХ грузомест заявки в одном файле. */
@@ -1586,7 +1600,11 @@ function labelPdfBlob_(body, creds) {
 
 /** Папка дня по артикулу: «Этикетки поставок <бренд>» / «ДД.ММ.ГГГГ — <артикул>». */
 function artDayFolder_(art) {
-  return labelsFolder_();
+  var root = labelsFolder_();
+  var day = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Europe/Moscow', 'dd.MM.yyyy');
+  var name = day + ' — ' + String(art).replace(/[\\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+  var it = root.getFoldersByName(name);
+  return it.hasNext() ? it.next() : root.createFolder(name);
 }
 
 /** Этикетки заявки, разложенные ПО АРТИКУЛАМ: на каждый артикул — свой PDF в папке
